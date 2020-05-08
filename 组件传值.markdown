@@ -1,0 +1,126 @@
+# vue中的传值整理
+
+#####  父子组件 传值
+
+```javascript
+父 -> 子  prop    
+子 -> 父  $emit
+```
+
+* 父组件中导入子组件注册并使用，在子组件上写入传递的值，子组件通过prop接收（可以用 type指定穿过来的数据类型，default可以设置默认值）。
+
+* 子传父 子组件通过点击事件 使用 this.$emit("sendFsenunctiong",parmas) , sendFunction代表父组件接受的方法，parmas 指传递的参数（可以为数组）。  父组件中 绑定一个方法来接收。 
+
+  
+
+  /src/views/father.vue
+
+  ``` javascript
+  <template>
+    <div @sendFsenunctiong = 'reciveFunciton'> </div>    
+  </template>
+  
+  <script>
+   export default ={
+       name:'father',
+       data(){
+       return{
+           msg:''
+       }
+   },
+       method:{
+           reciveFunciton(data){
+               this.msg =msg
+           }
+       }
+  }   
+   </script>
+  
+  ```
+
+* 父-> 子  通过ref 传递
+
+  ```javascript
+  1.父组件
+  this.$nextTtick(()=>{ //此方法执行时所有的DOM渲染和挂载都完毕
+     this.$refs.refName.init('父组件需要传递的数据')
+  })
+  
+  2.子组件接收
+  init(val){
+    this.data = val //接收父组件传递的值 子组件可以通过$emit传递回去
+  }
+  
+  ```
+
+  注：vue的思想是数据驱动视图，所以尽量少的用直接操作dom，当然一些需要获取元素宽高等场景时也会用到$refs
+
+##### 兄弟或无关系组件传值
+
+* $eventBus : 我们最常用的方式采用一个第三方变量 俗称eventbus,通过其中一个$emit发另一个$on接收的方式  实现组件传值.
+
+  main.js 挂载
+
+  ```javascript
+  Vue.proptype.$bus = new Vue()
+  ```
+
+  其中一个页面 $emit
+
+  ```javascript
+  //确保DOM渲染完成
+  this.$nextTick(()=>{
+      this.$bus.$emit('component','需要传的值')
+  })
+  ```
+
+  另一个页面通过$on来接收
+
+  ```javascript
+  mounted(){
+      //vue渲染的顺序：先渲染父组件->在渲染子组件
+      this.bus.$on('component',data=>{
+          console.log(data)
+      })
+  }
+  ```
+
+  
+
+#####  $attrs/listener
+
+```javascript
+// 父组件
+<template>
+    <div class='father'>
+    <Son @click='listener' name='pony' age='20'> </Son>
+    </div>
+ </template>
+```
+
+```javascript
+// 子组件
+<template>
+    <div class='son'>
+    <h1> {{ $attrs }} </h1>   // 儿子组件显示{"name"："pony"，"age":"20"}
+    <Grandson V-bind="$attrs"></Grandson>
+    </div>
+ </template>
+```
+
+* listener 用于传递事件
+
+  ```
+   vue中 listeners事件传递
+  父组件里的子组件上写个函数 比如@log="log"，在当前页的methods:{}里对应上执行的语句
+  子组件触发的话里写个触发事件，如click="aaa" 
+  methods写法:
+  methods:{
+    aaa(){
+     this.$listeners.你父组件的那个方法  这里是this.$listeners.log()调用
+    }
+  }
+  
+  子组件下还有组件的话  用v-on:"$listeners"再往下传
+  下面继续用子组件获取的方法获取
+  ```
